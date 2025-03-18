@@ -1,46 +1,66 @@
-<h1 align="center">Airflow Helm Chart (User Community)</h1>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
 
-<p align="center">
-  The <code>User-Community Airflow Helm Chart</code> is the standard way to deploy <a href="https://airflow.apache.org/">Apache Airflow</a> on <a href="https://kubernetes.io/">Kubernetes</a> with <a href="https://helm.sh/">Helm</a>.
-  Originally created in 2017, it has since helped thousands of companies create production-ready deployments of Airflow on Kubernetes.
-</p>
+   http://www.apache.org/licenses/LICENSE-2.0
 
-<p align="center">
-  <a href="https://github.com/airflow-helm/charts/releases">
-    <img alt="Downloads" src="https://img.shields.io/github/downloads/airflow-helm/charts/total?style=flat-square&color=28a745">
-  </a>
-  <a href="https://github.com/airflow-helm/charts/graphs/contributors">
-    <img alt="Contributors" src="https://img.shields.io/github/contributors/airflow-helm/charts?style=flat-square&color=28a745">
-  </a>
-  <a href="https://github.com/airflow-helm/charts/blob/main/LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/airflow-helm/charts?style=flat-square&color=28a745">
-  </a>
-  <a href="https://github.com/airflow-helm/charts/releases">
-    <img alt="Latest Release" src="https://img.shields.io/github/v/release/airflow-helm/charts?style=flat-square&color=6f42c1&label=latest%20release">
-  </a>
-  <a href="https://artifacthub.io/packages/helm/airflow-helm/airflow">
-    <img alt="ArtifactHub" src="https://img.shields.io/static/v1?style=flat-square&color=417598&logo=artifacthub&label=ArtifactHub&message=airflow-helm">
-  </a>
-</p>
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
 
-<p align="center">
-  <a href="https://github.com/airflow-helm/charts/stargazers">
-    <img alt="GitHub Stars" src="https://img.shields.io/github/stars/airflow-helm/charts?style=for-the-badge&color=ffcb2f&label=Support%20with%20%E2%AD%90%20on%20GitHub">
-  </a>
-  <a href="https://artifacthub.io/packages/helm/airflow-helm/airflow">
-    <img alt="ArtifactHub Stars" src="https://img.shields.io/badge/dynamic/json?style=for-the-badge&color=ffcb2f&label=Support%20with%20%E2%AD%90%20on%20ArtifactHub&query=stars&url=https://artifacthub.io/api/v1/packages/af52c9e8-afa6-4443-952f-3d4d17e3be35/stars">
-  </a>
-</p>
+# Helm Chart for Apache Airflow
 
-<p align="center">
-  <a href="https://github.com/airflow-helm/charts/discussions">
-    <img alt="GitHub Discussions" src="https://img.shields.io/github/discussions/airflow-helm/charts?style=for-the-badge&color=17a2b8&label=Start%20a%20Discussion">
-  </a>
-  <a href="https://github.com/airflow-helm/charts/issues/new/choose">
-    <img alt="GitHub Issues" src="https://img.shields.io/github/issues/airflow-helm/charts?style=for-the-badge&color=17a2b8&label=Open%20an%20Issue">
-  </a>
-</p>
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/apache-airflow)](https://artifacthub.io/packages/search?repo=apache-airflow)
 
-<h3 align="center">↓ ↓ ↓</h3>
+[Apache Airflow](https://airflow.apache.org/) is a platform to programmatically author, schedule and monitor workflows.
 
-<h1 align="center"><a href="https://github.com/airflow-helm/charts/tree/main/charts/airflow">Chart Homepage</a></h1>
+## Introduction
+
+This chart will bootstrap an [Airflow](https://airflow.apache.org) deployment on a [Kubernetes](http://kubernetes.io)
+cluster using the [Helm](https://helm.sh) package manager.
+
+## Requirements
+
+- Kubernetes 1.26+ cluster
+- Helm 3.0+
+- PV provisioner support in the underlying infrastructure (optionally)
+
+## Features
+
+* Supported executors: ``LocalExecutor``, ``CeleryExecutor``, ``KubernetesExecutor``, ``LocalKubernetesExecutor``, ``CeleryKubernetesExecutor``
+* Supported AWS executors with AWS provider version ``8.21.0+``:
+   * ``airflow.providers.amazon.aws.executors.batch.AwsBatchExecutor``
+   * ``airflow.providers.amazon.aws.executors.ecs.AwsEcsExecutor``
+* Supported Airflow version: ``1.10+``, ``2.0+``
+* Supported database backend: ``PostgreSQL``, ``MySQL``
+* Autoscaling for ``CeleryExecutor`` provided by KEDA
+* ``PostgreSQL`` and ``PgBouncer`` with a battle-tested configuration
+* Monitoring:
+   * StatsD/Prometheus metrics for Airflow
+   * Prometheus metrics for PgBouncer
+   * Flower
+* Automatic database migration after a new deployment
+* Administrator account creation during deployment
+* Kerberos secure configuration
+* One-command deployment for any type of executor. You don't need to provide other services e.g. Redis/Database to test the Airflow.
+
+## Documentation
+
+Full documentation for Helm Chart (latest **stable** release) lives [on the website](https://airflow.apache.org/docs/helm-chart/).
+
+> Note: If you're looking for documentation for main branch (latest development branch): you can find it on [s.apache.org/airflow-docs/](http://apache-airflow-docs.s3-website.eu-central-1.amazonaws.com/docs/helm-chart/stable/index.html).
+> Source code for documentation is in [../docs/helm-chart](https://github.com/apache/airflow/tree/main/docs/helm-chart)
+>
+
+## Contributing
+
+Want to help build Apache Airflow? Check out our [contributing documentation](https://github.com/apache/airflow/blob/main/contributing-docs/README.rst).
