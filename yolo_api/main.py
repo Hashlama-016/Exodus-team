@@ -44,5 +44,5 @@ if __name__ == "__main__":
     app.include_router(public)
     app.include_router(secure)
     port = get_conf()["port"]
-    server = Server(Config(app, host="127.0.0.1", port=port, lifespan="on"))
+    server = Server(Config(app, host="0.0.0.0", port=port, lifespan="on"))
     server.run()
