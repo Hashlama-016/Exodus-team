@@ -1,0 +1,8 @@
+uvicorn
+fastapi
+pydantic
+pydantic-settings
+python-dotenv
+ultralytics
+pillow
+python-multipart

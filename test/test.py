@@ -1,0 +1,15 @@
+import requests
+import dotenv
+import os
+
+dotenv.load_dotenv()
+url_model_run = os.getenv("url_model_run")
+url_model_classes = os.getenv("url_model_classes")
+
+
+files = {'file': open(os.getenv("file"), 'rb')}
+data = {'classes': [0]}
+response = requests.post(url_model_run, files=files, json=data, headers={'x-key': os.getenv("token_key")})
+print(response.json())
+response = requests.get(url_model_classes, files=files, json=data, headers={'x-key': os.getenv("token_key")})
+print(response.json())
