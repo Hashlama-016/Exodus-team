@@ -1,9 +1,10 @@
 from ultralytics import YOLO
 from PIL import Image
-
+from functools import lru_cache
 from conf import get_conf
 
 
+@lru_cache
 def load_model():
     try:
         model = YOLO(get_conf()["model_file"])
