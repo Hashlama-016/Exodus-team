@@ -13,7 +13,7 @@ secure = APIRouter(dependencies=[Depends(handle_api_key)])
 
 @public.get("/")
 def read_root():
-    return "🤖🦊🦒"
+    return "ok status"
 
 
 @secure.post("/model/run")
