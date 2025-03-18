@@ -43,7 +43,7 @@ useStandardNaming: false
 revisionHistoryLimit: ~
 
 # User and group of airflow user
-uid: 1000800001
+# uid: 1000800001
 # gid: 0
 
 # Default security context for airflow (deprecated, use `securityContexts` instead)
@@ -2006,7 +2006,7 @@ statsd:
     # Annotations to add to worker kubernetes service account.
     annotations: {}
 
-  uid: 1000800002
+  # uid: 1000800002
   # When not set, `statsd.uid` will be used
 
   # (deprecated, use `securityContexts` instead)
@@ -2191,7 +2191,7 @@ pgbouncer:
 
   priorityClassName: ~
 
-  uid: 1000800002
+  # uid: 1000800002
 
   # Detailed default security context for pgbouncer for container level
   securityContexts:
@@ -2318,7 +2318,7 @@ redis:
   priorityClassName: ~
 
   # Set to 0 for backwards-compatiblity
-  uid: 1000800001
+  # uid: 1000800001
   # If not set, `redis.uid` will be used
   securityContext: {}
   #  runAsUser: 999
@@ -2667,7 +2667,7 @@ dags:
     #       name: 'proxy-config'
 
     containerName: git-sync
-    uid: 1000800003
+    # uid: 1000800003
 
     # When not set, the values defined in the global securityContext will be used
     securityContext: {}
