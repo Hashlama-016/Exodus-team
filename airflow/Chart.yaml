@@ -1,0 +1,17 @@
+apiVersion: v2
+appVersion: 2.9.3
+dependencies:
+- condition: postgresql.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami # file://../postgresql
+  version: 13.2.24
+description: The official Helm chart to deploy Apache Airflow, a platform to programmatically
+  author, schedule, and monitor workflows
+keywords:
+- apache
+- airflow
+- workflow
+- scheduler
+name: airflow
+type: application
+version: 1.15.0
