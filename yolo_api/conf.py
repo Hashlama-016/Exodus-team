@@ -10,7 +10,8 @@ class Settings(BaseSettings):
 
     # fastapi
     port: int = 8080
-
+    model_file: str
+    api_key: str
 
 @lru_cache
 def get_conf():
