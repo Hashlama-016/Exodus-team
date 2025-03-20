@@ -674,7 +674,13 @@ workers:
     #   memory: 128Mi
 
 
-  resources: {}
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
   #  limits:
   #   cpu: 100m
   #   memory: 128Mi
@@ -887,7 +893,13 @@ scheduler:
       maxUnavailable: 1
       # minAvailable: 1
 
-  resources: {}
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
   #  limits:
   #   cpu: 100m
   #   memory: 128Mi
@@ -1376,7 +1388,13 @@ webserver:
       ports:
         - port: "{{ .Values.ports.airflowUI }}"
 
-  resources: {}
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
   #   limits:
   #     cpu: 100m
   #     memory: 128Mi
@@ -2025,7 +2043,13 @@ statsd:
 
   # Additional network policies as needed
   extraNetworkPolicies: []
-  resources: {}
+  resources:
+     requests:
+       cpu: "250m"
+       memory: "512Mi"
+     limits:
+       cpu: "500m"
+       memory: "1Gi"
   #   limits:
   #     cpu: 100m
   #     memory: 128Mi
@@ -2695,7 +2719,13 @@ dags:
     #   sizeLimit: 1Gi
     #   medium: Memory
 
-    resources: {}
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "1Gi"   
     #  limits:
     #   cpu: 100m
     #   memory: 128Mi
