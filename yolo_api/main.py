@@ -5,10 +5,41 @@ from model.model import run_model_on_image, get_model_classes
 from pydantic import ValidationError
 from model.input_model import ModelInput
 from auth import handle_api_key
+import requests
 
 app = FastAPI()
 public = APIRouter()
 secure = APIRouter(dependencies=[Depends(handle_api_key)])
+
+
+def fetch_image(image_url: str) -> bytes:
+    """
+    Fetches an image from a given URL and returns it as a byte array.
+
+    :param image_url: URL of the image (Azure Blob URL)
+    :return: Image content as bytes
+    :raises ValueError: If the URL is empty
+    :raises requests.exceptions.RequestException: For network-related errors
+    """
+    if not image_url:
+        raise ValueError("Image URL cannot be empty")
+
+    try:
+        response = requests.get(image_url, stream=True)
+        response.raise_for_status()  # Raises an error for HTTP errors (4xx and 5xx)
+        return response.content  # Return image as bytes
+
+    except requests.exceptions.MissingSchema:
+        raise ValueError("❌ Invalid URL format")
+    except requests.exceptions.ConnectionError:
+        raise ConnectionError("❌ Failed to connect to the server")
+    except requests.exceptions.Timeout:
+        raise TimeoutError("❌ The request timed out")
+    except requests.exceptions.HTTPError as e:
+        raise requests.exceptions.HTTPError(f"❌ HTTP Error: {e}")
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"❌ Unexpected error: {e}")
+
 
 
 @public.get("/")
@@ -18,9 +49,18 @@ def read_root():
 
 @secure.post("/model/run")
 async def model_run(file: UploadFile = File(), classes: list = None):
+# async def model_run(image_url: str, classes: list = None):
     if classes is None:
         classes = [0]
+    # try:
+    #     image_url = "https://yourstorageaccount.blob.core.windows.net/container-name/image.jpg"
+    #     image_data = fetch_image(image_url)
+    #     print(f"✅ Image fetched successfully! Size: {len(image_data)} bytes")
+    # except Exception as e:
+    #     print(e)
+    
     try:
+        # input_model = ModelInput(file=image_data, classes=classes)
         input_model = ModelInput(file=file, classes=classes)
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
