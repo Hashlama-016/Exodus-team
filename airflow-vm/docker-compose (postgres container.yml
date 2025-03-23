@@ -51,10 +51,10 @@ x-airflow-common:
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow_user:m6AUeBvUOhXz4SESaeLCnQ==@10.50.2.5:5436/airflow_db
     # For backward compatibility, with Airflow <2.3
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow_user:m6AUeBvUOhXz4SESaeLCnQ==@10.50.2.5:5436/airflow_db
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow_user:m6AUeBvUOhXz4SESaeLCnQ==@10.50.2.5:5436/airflow_db
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
@@ -78,21 +78,6 @@ x-airflow-common:
       condition: service_healthy
 
 services:
-  postgres:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
-    volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
-      interval: 5s
-      retries: 5
-    restart: always
 
   redis:
     image: redis:latest
@@ -115,7 +100,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-    restart: always
+    # restart: always
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -129,7 +114,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-    restart: always
+    # restart: always
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -150,7 +135,7 @@ services:
       # Required to handle warm shutdown of the celery workers properly
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
-    restart: always
+    # restart: always
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -164,7 +149,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-    restart: always
+    # restart: always
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -276,7 +261,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-    restart: always
+    # restart: always
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
