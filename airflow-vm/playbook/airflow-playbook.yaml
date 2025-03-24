@@ -54,8 +54,32 @@
         content: AIRFLOW_UID={{ getent_passwd["airflow"].1 }}
         dest: "/opt/airflow/.env"
 
-    - name: init container
-      shell: "docker-compose up airflow-init"
+    - name: Copy github rsa key
+      copy:
+        src: "./github-auth-rsa"
+        dest: "/home/airflow/.ssh/github-auth-rsa"
+        owner: "airflow"
+        mode: "0600"
+
+    - name: Add rsa key to ssh agent
+      become_user: airflow
+      shell: |
+        eval "$(ssh-agent -s)"
+        ssh-add ~/.ssh/github-auth-rsa
+
+    - name: Copy gitsync script to airflow directory
+      copy:
+        src: "./gitsync.sh"
+        dest: "/opt/airflow/gitsync.sh"
+        owner: "airflow"
+        mode: "0700"
+
+    - name: Create cronjob
+      cron:
+        minute: "*/5"
+        user: airflow
+        job: "/opt/airflow/gitsync.sh"
+        state: present
 
     - name: start airflow
       docker_compose:
