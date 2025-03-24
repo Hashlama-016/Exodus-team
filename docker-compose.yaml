@@ -78,7 +78,7 @@ x-airflow-common:
       condition: service_healthy
 
 services:
-  postgres: 
+  postgres:
     image: postgres:13
     environment:
       POSTGRES_USER: airflow
@@ -95,7 +95,6 @@ services:
     restart: always
 
   redis:
-    user: "${AIRFLOW_UID:-50000}:0"
     image: redis:latest
     expose:
       - 6379
@@ -107,7 +106,6 @@ services:
     restart: always
 
   airflow-webserver:
-    user: "${AIRFLOW_UID:-50000}:0"
     <<: *airflow-common
     command: webserver
     ports:
@@ -124,7 +122,6 @@ services:
         condition: service_completed_successfully
 
   airflow-scheduler:
-    user: "${AIRFLOW_UID:-50000}:0"
     <<: *airflow-common
     command: scheduler
     healthcheck:
@@ -139,7 +136,6 @@ services:
         condition: service_completed_successfully
 
   airflow-worker:
-    user: "${AIRFLOW_UID:-50000}:0"
     <<: *airflow-common
     command: celery worker
     healthcheck:
@@ -161,7 +157,6 @@ services:
         condition: service_completed_successfully
 
   airflow-triggerer:
-    user: "${AIRFLOW_UID:-50000}:0"
     <<: *airflow-common
     command: triggerer
     healthcheck:
@@ -176,7 +171,6 @@ services:
         condition: service_completed_successfully
 
   airflow-init:
-    user: "${AIRFLOW_UID:-50000}:0"
     <<: *airflow-common
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
@@ -255,7 +249,6 @@ services:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
 
   airflow-cli:
-    user: "${AIRFLOW_UID:-50000}:0"
     <<: *airflow-common
     profiles:
       - debug
@@ -272,7 +265,6 @@ services:
   # or by explicitly targeted on the command line e.g. docker-compose up flower.
   # See: https://docs.docker.com/compose/profiles/
   flower:
-    user: "${AIRFLOW_UID:-50000}:0"
     <<: *airflow-common
     command: celery flower
     profiles:
