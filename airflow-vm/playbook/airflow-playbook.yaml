@@ -1,0 +1,59 @@
+---
+- name: install-airflow
+  hosts: airflow
+  become: true
+
+  tasks:
+    - name: install docker and docker-compose
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - docker
+        - docker-compose
+  
+    - name: Add the airflow user
+      user:
+        name: airflow
+        comment: Airflow user
+        uid: 50000
+
+    - name: create airflow dir
+      file:
+        path: /opt/airflow
+        state: directory
+        owner: airflow
+        mode: '0700'
+
+    - name: copy docker-compose file from git
+      get_url:
+        url: "{{ docker-url }}"
+        dest: "/airflow/docker-compose.yml"
+        mode: '0644'
+    
+    - name: create airlfow dirs
+        file:
+        path: "/opt/airflow/{{ item }}"
+        owner: airflow
+        state: directory
+        mode: '0700'
+      loop:
+        - dags
+        - logs
+        - plugins
+        - config
+
+    - name: echo UID to env
+      getent:
+        database: passwd
+      copy:
+        content: "AIRFLOW_UID={{ getent_passwd[airflow].1 }}"
+        dest: "/opt/airflow/.env"
+
+    - name: init container
+      shell: "docker compose up airflow-init"
+
+    - name: start airflow
+      docker_compose:
+      project_src: /opt/airflow
+      state: present
