@@ -51,11 +51,11 @@
 
     - name: echo UID to .env
       copy:
-        content: "AIRFLOW_UID={{ getent_passwd[airflow].1 }}"
+        content: AIRFLOW_UID={{ getent_passwd["airflow"].1 }}
         dest: "/opt/airflow/.env"
 
     - name: init container
-      shell: "docker compose up airflow-init"
+      shell: "docker-compose up airflow-init"
 
     - name: start airflow
       docker_compose:
