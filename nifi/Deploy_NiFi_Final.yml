@@ -5,15 +5,17 @@
   vars:
     java_version: "openjdk-21-jdk"
     java_home: "/usr/lib/jvm/java-21-openjdk-amd64"
+    banner_name: "sysvbanner"
     nifi_version: "2.0.0"
     nifi_install_dir: "/opt/nifi"
     nifi_user: "nifi"
     nifi_group: "nifi"
     nifi_port: 8080
+    num_instances: 2
     nifi_file_type: "zip"  # Change to "tar.gz" if using a tarball
     nifi_zip_file: "nifi-{{ nifi_version }}-bin.zip"
     nifi_tar_file: "nifi-{{ nifi_version }}-bin.tar.gz"
-    nifi_url: "https://downloads.apache.org/nifi/{{ nifi_version }}/{{ 'nifi-' + nifi_version + '-bin.' + nifi_file_type }}"
+    nifi_url: "https://downloads.apache.org/nifi/{{ nifi_version }}/{{ 'nifi-' + nifi_version + '-bin.' + nifi_file_type }}"  
 
   tasks:
     - name: Install Java
@@ -21,6 +23,17 @@
         name: "{{ java_version }}"
         state: present
         update_cache: yes
+
+    - name: Install banner
+      apt:
+        name: "{{ banner_name }}"
+        state: present
+        update_cache: yes
+
+    - name: Bashrc edit
+      lineinfile:
+        path: /etc/bash.bashrc
+        line: "banner welcome to nifi vm!"
 
     - name: Create NiFi User
       user:
@@ -59,67 +72,83 @@
       args:
         creates: "{{ nifi_install_dir }}"
 
+    - name: Create Nifi instance directories
+      copy:
+        src: "{{ nifi_install_dir }}/"
+        dest: "{{ nifi_install_dir }}-{{ item }}"
+        remote_src: yes
+      loop: "{{ range(1, num_instances + 1) | list }}"
+
     - name: Set JAVA_HOME in NiFi Config
       lineinfile:
-        path: "{{ nifi_install_dir }}/conf/bootstrap.conf"
+        path: "{{ nifi_install_dir }}-{{ item }}/conf/bootstrap.conf"
         regexp: '^java.home='
         line: "java.home={{ java_home }}"
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Ensure NiFi Uses HTTP
       replace:
-        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        path: "{{ nifi_install_dir }}-{{ item }}/conf/nifi.properties"
         regexp: '^nifi.web.http.host=.*'
         replace: "nifi.web.http.host=0.0.0.0"
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Set NiFi Web HTTP Port
       replace:
-        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        path: "{{ nifi_install_dir }}-{{ item }}/conf/nifi.properties"
         regexp: '^nifi.web.http.port=.*'
-        replace: "nifi.web.http.port={{ nifi_port }}"
+        replace: "nifi.web.http.port={{ nifi_port + item }}"
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Disable HTTPS
       lineinfile:
-        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        path: "{{ nifi_install_dir }}-{{ item }}/conf/nifi.properties"
         regexp: '^nifi.web.https.port='
         line: "nifi.web.https.port="
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Ensure Remote Input is Disabled
       lineinfile:
-        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        path: "{{ nifi_install_dir }}-{{ item }}/conf/nifi.properties"
         regexp: '^nifi.remote.input.secure='
         line: "nifi.remote.input.secure=false"
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Ensure Remote Input Port is Unset
       lineinfile:
-        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        path: "{{ nifi_install_dir }}-{{ item }}/conf/nifi.properties"
         regexp: '^nifi.remote.input.http.enabled='
         line: "nifi.remote.input.http.enabled=false"
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Ensure Remote Input HTTP Port is Unset
       lineinfile:
-        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        path: "{{ nifi_install_dir }}-{{ item }}/conf/nifi.properties"
         regexp: '^nifi.remote.input.http.port='
         line: "nifi.remote.input.http.port="
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Change Ownership of NiFi Directory
       file:
-        path: "{{ nifi_install_dir }}"
+        path: "{{ nifi_install_dir }}-{{ item }}"
         owner: "{{ nifi_user }}"
         group: "{{ nifi_group }}"
         recurse: yes
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Allow NiFi port in firewall
       ufw:
         rule: allow
-        port: "{{ nifi_port }}"
+        port: "{{ nifi_port + item }}"
         proto: tcp
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Reload UFW
       command: ufw reload
 
     - name: Create Systemd Service for NiFi
       copy:
-        dest: "/etc/systemd/system/nifi.service"
+        dest: "/etc/systemd/system/nifi-{{ item }}.service"
         content: |
           [Unit]
           Description=Apache NiFi
@@ -127,26 +156,27 @@
 
           [Service]
           Type=forking
-          ExecStart={{ nifi_install_dir }}/bin/nifi.sh start
-          ExecStop={{ nifi_install_dir }}/bin/nifi.sh stop
+          ExecStart={{ nifi_install_dir }}-{{ item }}/bin/nifi.sh start
+          ExecStop={{ nifi_install_dir }}-{{ item }}/bin/nifi.sh stop
           User={{ nifi_user }}
           Restart=always
 
           [Install]
           WantedBy=multi-user.target
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Reload Systemd and Enable NiFi Service
       systemd:
         daemon_reload: yes
-        name: nifi
+        name: nifi-{{ item }}
         enabled: yes
         state: started
+      loop: "{{ range(1, num_instances + 1) | list }}"
 
     - name: Check NiFi logs for errors
-      command: "tail -n 20 {{ nifi_install_dir }}/logs/nifi-app.log"
+      command: "tail -n 20 {{ nifi_install_dir }}-1/logs/nifi-app.log {{ nifi_install_dir }}-2/logs/nifi-app.log {{ nifi_install_dir }}-3/logs/nifi-app.log"
       register: nifi_logs
       failed_when: "'ERROR' in nifi_logs.stdout"
 
     - debug:
-        msg: "{{ nifi_logs.stdout }}"
-
+      msg: "{{ nifi_logs.stdout }}"
