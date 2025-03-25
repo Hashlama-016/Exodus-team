@@ -1,0 +1,93 @@
+---
+- name: install-airflow
+  # hosts: airflow
+  hosts: 127.0.0.1
+  connection: local
+  become: true
+
+  tasks:
+    - name: install docker and docker-compose
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - docker
+        - docker-compose
+ 
+    - name: Install banner
+      apt:
+        name: sysvbanner
+        state: present
+        update_cache: yes
+
+    - name: Bashrc edit
+      lineinfile:
+        path: /etc/bash.bashrc
+        line: "banner welcome to airflow vm!"
+
+    - name: Add the airflow user
+      user:
+        name: airflow
+        comment: Airflow user
+        uid: 50000
+
+    - name: create airflow dir
+      file:
+        path: /opt/airflow
+        state: directory
+        owner: airflow
+        mode: '0700'
+
+    - name: copy docker-compose file
+      copy:
+        src: "./docker-compose.yaml"
+        dest: "/opt/airflow/docker-compose.yaml"
+        owner: airflow
+        mode: "0600"
+    
+    - name: create airlfow dirs
+      file:
+        path: "/opt/airflow/{{ item }}"
+        owner: airflow
+        state: directory
+        mode: "0700"
+      loop:
+        - dags
+        - logs
+        - plugins
+        - config
+
+    - name: get passwd for UID
+      getent:
+        database: passwd
+
+    - name: echo UID to .env
+      copy:
+        content: AIRFLOW_UID={{ getent_passwd["airflow"].1 }}
+        dest: "/opt/airflow/.env"
+
+    - name: Copy github rsa key
+      copy:
+        src: "./gitsync/github-auth-rsa"
+        dest: "/home/airflow/.ssh/github-auth-rsa"
+        owner: "airflow"
+        mode: "0600"
+
+    - name: Copy gitsync script to airflow directory
+      copy:
+        src: "./gitsync/gitsync.sh"
+        dest: "/opt/airflow/gitsync.sh"
+        owner: "airflow"
+        mode: "0700"
+
+    - name: Create cronjob
+      cron:
+        minute: "*/1"
+        user: airflow
+        job: "/opt/airflow/./gitsync.sh  >> /opt/airflow/cron-log 2>&1"
+        state: present
+
+    - name: start airflow
+      docker_compose:
+        project_src: /opt/airflow
+        state: present
