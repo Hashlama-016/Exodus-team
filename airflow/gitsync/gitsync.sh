@@ -1,4 +1,7 @@
-#!/bin/sh
+#/bin/sh
+
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/github-auth-rsa
 
 REPOS="
 git@github.com:Hashlama-016/airflow-DAGs.git
@@ -21,6 +24,7 @@ for repo in $REPOS; do
 	if [ ! -d "/opt/airflow/dags/$DIR/.git" ]; then
 		echo "Cloning $URL..."
 		git clone --depth 1 "$URL" "/opt/airflow/dags/$DIR"
+		git config --global --add safe.directory "/opt/airflow/dags/$DIR"
 	else
 		echo "Updating $URL..."
 		cd "/opt/airflow/dags/$DIR" && git pull origin main

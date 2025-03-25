@@ -13,7 +13,18 @@
       loop:
         - docker
         - docker-compose
-  
+ 
+    - name: Install banner
+      apt:
+        name: sysvbanner
+        state: present
+        update_cache: yes
+
+    - name: Bashrc edit
+      lineinfile:
+        path: /etc/bash.bashrc
+        line: "banner welcome to airflow vm!"
+
     - name: Add the airflow user
       user:
         name: airflow
@@ -27,18 +38,19 @@
         owner: airflow
         mode: '0700'
 
-    - name: copy docker-compose file from git
-      get_url:
-        url: "{{ url }}"
-        dest: "/opt/airflow/docker-compose.yml"
-        mode: '0644'
+    - name: copy docker-compose file
+      copy:
+        src: "./docker-compose.yaml"
+        dest: "/opt/airflow/docker-compose.yaml"
+        owner: airflow
+        mode: "0600"
     
     - name: create airlfow dirs
       file:
         path: "/opt/airflow/{{ item }}"
         owner: airflow
         state: directory
-        mode: '0700'
+        mode: "0700"
       loop:
         - dags
         - logs
@@ -56,29 +68,23 @@
 
     - name: Copy github rsa key
       copy:
-        src: "./github-auth-rsa"
+        src: "./gitsync/github-auth-rsa"
         dest: "/home/airflow/.ssh/github-auth-rsa"
         owner: "airflow"
         mode: "0600"
 
-    - name: Add rsa key to ssh agent
-      become_user: airflow
-      shell: |
-        eval "$(ssh-agent -s)"
-        ssh-add ~/.ssh/github-auth-rsa
-
     - name: Copy gitsync script to airflow directory
       copy:
-        src: "./gitsync.sh"
+        src: "./gitsync/gitsync.sh"
         dest: "/opt/airflow/gitsync.sh"
         owner: "airflow"
         mode: "0700"
 
     - name: Create cronjob
       cron:
-        minute: "*/5"
+        minute: "*/1"
         user: airflow
-        job: "/opt/airflow/gitsync.sh"
+        job: "/opt/airflow/./gitsync.sh  >> /opt/airflow/cron-log 2>&1"
         state: present
 
     - name: start airflow

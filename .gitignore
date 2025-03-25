@@ -1,2 +1,5 @@
 # ignore rsa keys
 *-rsa
+
+# ignore qol script
+run-playbook.sh
