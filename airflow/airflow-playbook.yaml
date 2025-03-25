@@ -86,6 +86,7 @@
         user: airflow
         job: "/opt/airflow/./gitsync.sh  >> /opt/airflow/cron-log 2>&1"
         state: present
+        name: gitsync
 
     - name: start airflow
       docker_compose:
