@@ -6,6 +6,7 @@ ssh-add ~/.ssh/github-auth-rsa
 REPOS="
 git@github.com:Hashlama-016/airflow-DAGs.git
 git@github.com:Hashlama-016/airflow-team-DAGs.git
+git@github.com:Hashlama-016/Obelisk-DAGs.git
 "
 
 for repo in $REPOS; do
