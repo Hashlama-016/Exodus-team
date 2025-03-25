@@ -8,6 +8,7 @@ git@github.com:Hashlama-016/airflow-DAGs.git
 git@github.com:Hashlama-016/airflow-team-DAGs.git
 git@github.com:Hashlama-016/Obelisk-DAGs.git
 http://10.50.1.4/Hashlama_8/airflow-test.git
+http://10.50.1.4/Hashlama_8/obelisk-airflow.git
 "
 
 for repo in $REPOS; do
