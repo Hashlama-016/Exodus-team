@@ -1,0 +1,152 @@
+---
+- name: Deploy Apache NiFi
+  hosts: localhost
+  become: yes
+  vars:
+    java_version: "openjdk-21-jdk"
+    java_home: "/usr/lib/jvm/java-21-openjdk-amd64"
+    nifi_version: "2.0.0"
+    nifi_install_dir: "/opt/nifi"
+    nifi_user: "nifi"
+    nifi_group: "nifi"
+    nifi_port: 8080
+    nifi_file_type: "zip"  # Change to "tar.gz" if using a tarball
+    nifi_zip_file: "nifi-{{ nifi_version }}-bin.zip"
+    nifi_tar_file: "nifi-{{ nifi_version }}-bin.tar.gz"
+    nifi_url: "https://downloads.apache.org/nifi/{{ nifi_version }}/{{ 'nifi-' + nifi_version + '-bin.' + nifi_file_type }}"
+
+  tasks:
+    - name: Install Java
+      apt:
+        name: "{{ java_version }}"
+        state: present
+        update_cache: yes
+
+    - name: Create NiFi User
+      user:
+        name: "{{ nifi_user }}"
+        system: yes
+        shell: "/bin/bash"
+        create_home: yes
+
+    - name: Download Apache NiFi
+      get_url:
+        url: "{{ nifi_url }}"
+        dest: "/tmp/{{ nifi_zip_file if nifi_file_type == 'zip' else nifi_tar_file }}"
+        mode: '0644'
+
+    - name: Extract NiFi ZIP File
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ nifi_zip_file }}"
+        dest: "/opt"
+        remote_src: yes
+        owner: "{{ nifi_user }}"
+        group: "{{ nifi_group }}"
+        extra_opts: ["-o"]
+      when: nifi_file_type == "zip"
+
+    - name: Extract NiFi Tarball
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ nifi_tar_file }}"
+        dest: "/opt"
+        remote_src: yes
+        owner: "{{ nifi_user }}"
+        group: "{{ nifi_group }}"
+      when: nifi_file_type == "tar.gz"
+
+    - name: Rename NiFi Directory
+      command: mv /opt/nifi-{{ nifi_version }} "{{ nifi_install_dir }}"
+      args:
+        creates: "{{ nifi_install_dir }}"
+
+    - name: Set JAVA_HOME in NiFi Config
+      lineinfile:
+        path: "{{ nifi_install_dir }}/conf/bootstrap.conf"
+        regexp: '^java.home='
+        line: "java.home={{ java_home }}"
+
+    - name: Ensure NiFi Uses HTTP
+      replace:
+        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        regexp: '^nifi.web.http.host=.*'
+        replace: "nifi.web.http.host=0.0.0.0"
+
+    - name: Set NiFi Web HTTP Port
+      replace:
+        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        regexp: '^nifi.web.http.port=.*'
+        replace: "nifi.web.http.port={{ nifi_port }}"
+
+    - name: Disable HTTPS
+      lineinfile:
+        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        regexp: '^nifi.web.https.port='
+        line: "nifi.web.https.port="
+
+    - name: Ensure Remote Input is Disabled
+      lineinfile:
+        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        regexp: '^nifi.remote.input.secure='
+        line: "nifi.remote.input.secure=false"
+
+    - name: Ensure Remote Input Port is Unset
+      lineinfile:
+        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        regexp: '^nifi.remote.input.http.enabled='
+        line: "nifi.remote.input.http.enabled=false"
+
+    - name: Ensure Remote Input HTTP Port is Unset
+      lineinfile:
+        path: "{{ nifi_install_dir }}/conf/nifi.properties"
+        regexp: '^nifi.remote.input.http.port='
+        line: "nifi.remote.input.http.port="
+
+    - name: Change Ownership of NiFi Directory
+      file:
+        path: "{{ nifi_install_dir }}"
+        owner: "{{ nifi_user }}"
+        group: "{{ nifi_group }}"
+        recurse: yes
+
+    - name: Allow NiFi port in firewall
+      ufw:
+        rule: allow
+        port: "{{ nifi_port }}"
+        proto: tcp
+
+    - name: Reload UFW
+      command: ufw reload
+
+    - name: Create Systemd Service for NiFi
+      copy:
+        dest: "/etc/systemd/system/nifi.service"
+        content: |
+          [Unit]
+          Description=Apache NiFi
+          After=network.target
+
+          [Service]
+          Type=forking
+          ExecStart={{ nifi_install_dir }}/bin/nifi.sh start
+          ExecStop={{ nifi_install_dir }}/bin/nifi.sh stop
+          User={{ nifi_user }}
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload Systemd and Enable NiFi Service
+      systemd:
+        daemon_reload: yes
+        name: nifi
+        enabled: yes
+        state: started
+
+    - name: Check NiFi logs for errors
+      command: "tail -n 20 {{ nifi_install_dir }}/logs/nifi-app.log"
+      register: nifi_logs
+      failed_when: "'ERROR' in nifi_logs.stdout"
+
+    - debug:
+        msg: "{{ nifi_logs.stdout }}"
+
