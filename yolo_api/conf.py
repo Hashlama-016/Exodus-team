@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     model_file: str
     api_key: str
 
+    # s3
+    aws_endpoint_url: str
+    aws_access_key_id: str
+    aws_secret_access_key: str
+    bucket_name: str
+
+
 @lru_cache
 def get_conf():
     settings = Settings()

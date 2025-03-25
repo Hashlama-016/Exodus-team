@@ -6,3 +6,4 @@ python-dotenv
 ultralytics
 pillow
 python-multipart
+boto3

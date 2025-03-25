@@ -1,6 +1,7 @@
-from pydantic import BaseModel, AfterValidator
+from pydantic import BaseModel, AfterValidator, Field
 from typing_extensions import Annotated
-from fastapi import UploadFile
+from fastapi import UploadFile, Query
+from typing import List
 
 
 def is_integer_list(value: list) -> list:
@@ -16,6 +17,19 @@ def is_integer_list(value: list) -> list:
     return value
 
 
+def is_s3_path_to_image(value: str) -> str:
+    if not value.endswith(".jpg"):
+        raise ValueError('S3 path must end with .jpg')
+    return value
+
+
 class ModelInput(BaseModel):
     file: UploadFile
-    classes: Annotated[list, AfterValidator(is_integer_list)]
+    classes: Annotated[List[int], AfterValidator(is_integer_list)] = Field(Query(...))
+
+
+class ModelInputS3(BaseModel):
+    s3_path: Annotated[str, AfterValidator(is_s3_path_to_image)]
+    classes: Annotated[List[int], AfterValidator(is_integer_list)] = Field(Query(...))
+
+
