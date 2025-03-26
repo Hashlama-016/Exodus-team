@@ -35,8 +35,8 @@
 #                                Default: airflow
 # _AIRFLOW_WWW_USER_PASSWORD   - Password for the administrator account (if requested).
 #                                Default: airflow
-# _PIP_ADDITIONAL_REQUIREMENTS - Additional PIP requirements to add when starting all containers.
-#                                Default: ''
+#_PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- apache-airflow-statd}
+  #Default: ''
 #
 # Feel free to modify this file to suit your needs.
 ---
@@ -50,17 +50,21 @@ x-airflow-common:
   # build: .
   environment:
     &airflow-common-env
+    AIRFLOW_METRICS_STATSD_ON: "True"
+    AIRFLOW_METRICS_STATSD_PORT: 8125
+    AIRFLOW_METRICS_STATSD_HOST: 10.50.16.12
+    AIRFLOW_METRICS_STATSD_PREFIX: airflow
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://airflow_user:d30948c65d0278d1391c6e0811e48169@10.50.16.10:5688/airflow_db"
     # For backward compatibility, with Airflow <2.3
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://airflow_user:d30948c65d0278d1391c6e0811e48169@10.50.16.10:5688/airflow_db"
+    AIRFLOW__CELERY__RESULT_BACKEND: "db+postgresql://postgresql+psycopg2://airflow_user:d30948c65d0278d1391c6e0811e48169@10.50.16.10:5688/airflow_db"
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    _PIP_ADDITIONAL_REQUIREMENTS: "apache-airflow[statd]==2.5.1 airflow-exporter" #${_PIP_ADDITIONAL_REQUIREMENTS:-}i
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -74,25 +78,8 @@ x-airflow-common:
     &airflow-common-depends-on
     redis:
       condition: service_healthy
-    postgres:
-      condition: service_healthy
 
 services:
-  postgres: 
-    image: postgres:13
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
-    volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
-      interval: 5s
-      retries: 5
-    restart: always
 
   redis:
     user: "${AIRFLOW_UID:-50000}:0"
@@ -112,6 +99,7 @@ services:
     command: webserver
     ports:
       - 8080:8080
+      - 8125:8125
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 10s
@@ -290,5 +278,3 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
-volumes:
-  postgres-db-volume:
