@@ -1,3 +1,7 @@
-# Ignore unpacked airflow files
+
+*venv
+*\.env
+*.idea
+*__pycache__
 *airflow-*.tgz
 
